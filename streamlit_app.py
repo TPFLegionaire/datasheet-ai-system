@@ -1,10 +1,7 @@
-# ============ START_APP ============
-# Copy everything below this line into streamlit_app.py
-
-
+"""
 DATASHEET EXTRACTION SYSTEM - COMPLETE WEB APPLICATION
 =====================================================
-
+"""
 
 import streamlit as st
 import pandas as pd
@@ -273,5 +270,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-# ============ END_APP ============
