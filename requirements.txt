@@ -1,6 +1,6 @@
 # ============ REQUIREMENTS.TXT ============
 # Copy these lines into requirements.txt:
-"""
+
 streamlit==1.29.0
 mistralai==0.0.12
 pandas==2.1.4
@@ -9,4 +9,4 @@ openpyxl==3.1.2
 python-dotenv==1.0.0
 aiofiles==23.2.1
 python-multipart==0.0.6
-"""
+
