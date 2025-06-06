@@ -1,10 +1,10 @@
 # ============ START_APP ============
 # Copy everything below this line into streamlit_app.py
 
-"""
+
 DATASHEET EXTRACTION SYSTEM - COMPLETE WEB APPLICATION
 =====================================================
-"""
+
 
 import streamlit as st
 import pandas as pd
