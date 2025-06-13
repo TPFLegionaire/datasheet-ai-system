@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datasheet AI Comparison System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #f0f2f6;
+            --text-color: #262730;
+            --light-gray: #f9f9f9;
+            --border-color: #e0e0e0;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: white;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background-color: var(--secondary-color);
+            padding: 20px;
+            border-right: 1px solid var(--border-color);
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+        
+        .header {
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: bold;
+        }
+        
+        .header p {
+            font-style: italic;
+            color: #666;
+        }
+        
+        .metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background-color: var(--secondary-color);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+        }
+        
+        .metric-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .metric-card p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px 0;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+        }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .success-message {
+            color: var(--primary-color);
+            margin-top: 10px;
+        }
+        
+        .warning-message {
+            color: #f44336;
+            margin-top: 10px;
+        }
+        
+        .info-message {
+            color: #2196F3;
+            margin-top: 10px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        table th, table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        table th {
+            background-color: var(--secondary-color);
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .chart-container {
+            margin-top: 30px;
+            height: 400px;
+        }
+        
+        .file-drop-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .file-drop-area:hover {
+            background-color: var(--light-gray);
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-msg {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .processing-list {
+            margin-top: 20px;
+        }
+        
+        .processing-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: var(--light-gray);
+            border-radius: 5px;
+        }
+        
+        .processing-status {
+            margin-left: auto;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .parameter-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .query-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            min-height: 100px;
+            resize: vertical;
+            margin-bottom: 20px;
+        }
+        
+        .response-box {
+            background-color: var(--light-gray);
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+        
+        .thinking {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            font-style: italic;
+            color: #666;
+        }
+        
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+        
+        .sidebar-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>🔑 Configuration</h3>
+                <div class="form-group">
+                    <label for="api-key">Mistral API Key</label>
+                    <input type="password" id="api-key" class="form-control" placeholder="Enter API key">
+                </div>
+                <div id="api-status" class="info-message">⚠️ Enter your Mistral API key</div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>ℹ️ About</h3>
+                <p>This is a demo version of the Datasheet AI Comparison System. It allows you to upload, compare, and query datasheet information.</p>
+                <p style="margin-top: 10px;">Note: This is a client-side demo with simulated functionality.</p>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h1>🚀 Datasheet AI Comparison System</h1>
+                <p>Transform your supplier comparison process</p>
+            </div>
+            
+            <!-- Metrics -->
+            <div class="metrics">
+                <div class="metric-card">
+                    <h3 id="datasheet-count">0</h3>
+                    <p>📄 Datasheets</p>
+                </div>
+                <div class="metric-card">
+                    <h3 id="parameter-count">0</h3>
+                    <p>📊 Parameters</p>
+                </div>
+                <div class="metric-card">
+                    <h3>95%</h3>
+                    <p>⚡ Time Saved</p>
+                </div>
+                <div class="metric-card">
+                    <h3>99%</h3>
+                    <p>🎯 Accuracy</p>
+                </div>
+            </div>
+            
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" data-tab="upload">📤 Upload</button>
+                <button class="tab" data-tab="compare">🔍 Compare</button>
+                <button class="tab" data-tab="query">💬 Query</button>
+            </div>
+            
+            <!-- Upload Tab Content -->
+            <div id="upload" class="tab-content active">
+                <h2>Upload Datasheets</h2>
+                <div class="file-drop-area" id="drop-area">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #ccc;"></i>
+                    <p>Drag & drop PDF files here or click to browse</p>
+                    <p class="file-msg">Supported file type: PDF</p>
+                    <input type="file" id="file-input" class="file-input" multiple accept=".pdf">
+                </div>
+                
+                <div class="processing-list" id="processing-list"></div>
+            </div>
+            
+            <!-- Compare Tab Content -->
+            <div id="compare" class="tab-content">
+                <h2>Compare Parameters</h2>
+                <div class="form-group">
+                    <label for="parameter-select">Select Parameter</label>
+                    <select id="parameter-select" class="parameter-select">
+                        <option value="">-- Select a parameter --</option>
+                    </select>
+                </div>
+                
+                <div id="comparison-table-container" class="hidden">
+                    <table id="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Supplier</th>
+                                <th>Part Number</th>
+                                <th>Value</th>
+                                <th>Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                
+                <div class="form-group hidden" id="chart-toggle-container">
+                    <input type="checkbox" id="show-chart">
+                    <label for="show-chart">Show Chart</label>
+                </div>
+                
+                <div class="chart-container hidden" id="chart-container">
+                    <canvas id="comparison-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Query Tab Content -->
+            <div id="query" class="tab-content">
+                <h2>Ask Questions</h2>
+                <div class="form-group">
+                    <label for="query-input">Your question:</label>
+                    <textarea id="query-input" class="query-textarea" placeholder="e.g., Which product has the highest data rate?"></textarea>
+                </div>
+                
+                <button id="query-btn" class="btn">Get Answer</button>
+                
+                <div id="thinking" class="thinking hidden">
+                    <div class="spinner"></div>
+                    <span>Thinking...</span>
+                </div>
+                
+                <div id="query-response" class="response-box hidden"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Demo data structure
+        const demoData = {
+            datasheets: [],
+            parameters: [],
+            nextId: 1
+        };
+        
+        // Sample parameter definitions
+        const parameterDefinitions = [
+            { name: "temperature_range", unit: "°C", category: "environmental" },
+            { name: "data_rate", unit: "Gbps", category: "performance" },
+            { name: "wavelength", unit: "nm", category: "optical" },
+            { name: "power_consumption", unit: "W", category: "electrical" },
+            { name: "reach", unit: "m", category: "performance" }
+        ];
+        
+        // Sample suppliers
+        const suppliers = ["Finisar", "Cisco", "Juniper", "Huawei"];
+        
+        // Sample product families
+        const productFamilies = ["Optical Transceivers", "Network Switches", "Routers"];
+        
+        // Chart instance
+        let comparisonChart = null;
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            setupTabNavigation();
+            setupFileUpload();
+            setupParameterSelect();
+            setupQueryForm();
+            setupApiKeyInput();
+            
+            // Load demo data
+            loadDemoData();
+            
+            // Update metrics
+            updateMetrics();
+        });
+        
+        // Tab navigation
+        function setupTabNavigation() {
+            const tabs = document.querySelectorAll('.tab');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all tab content
+                    const tabContents = document.querySelectorAll('.tab-content');
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Show the corresponding tab content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+        }
+        
+        // File upload handling
+        function setupFileUpload() {
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const processingList = document.getElementById('processing-list');
+            
+            // Trigger file input when drop area is clicked
+            dropArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Handle file selection
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+            
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            // Highlight drop area when file is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.style.backgroundColor = '#f0f2f6';
+            }
+            
+            function unhighlight() {
+                dropArea.style.backgroundColor = '';
+            }
+            
+            // Handle dropped files
+            dropArea.addEventListener('drop', function(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            });
+            
+            function handleFiles(files) {
+                processingList.innerHTML = '';
+                
+                if (files.length === 0) return;
+                
+                Array.from(files).forEach(file => {
+                    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                        processFile(file);
+                    } else {
+                        showError(`${file.name} is not a PDF file`);
+                    }
+                });
+            }
+            
+            function processFile(file) {
+                // Create processing item
+                const item = document.createElement('div');
+                item.className = 'processing-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${file.name}</strong>
+                        <div class="file-msg">${formatFileSize(file.size)}</div>
+                    </div>
+                    <div class="processing-status">
+                        <div class="spinner"></div>
+                        <span>Processing...</span>
+                    </div>
+                `;
+                processingList.appendChild(item);
+                
+                // Simulate processing
+                setTimeout(() => {
+                    const data = simulateExtraction(file.name);
+                    saveDatasheet(data);
+                    
+                    // Update processing status
+                    const status = item.querySelector('.processing-status');
+                    status.innerHTML = '<span style="color: var(--primary-color);">✅ Processed</span>';
+                    
+                    // Update metrics
+                    updateMetrics();
+                    
+                    // Update parameter select
+                    updateParameterSelect();
+                }, 1500);
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' bytes';
+                else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+                else return (bytes / 1048576).toFixed(1) + ' MB';
+            }
+            
+            function showError(message) {
+                const item = document.createElement('div');
+                item.className = 'processing-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>Error</strong>
+                        <div class="file-msg">${message}</div>
+                    </div>
+                    <div class="processing-status">
+                        <span style="color: #f44336;">❌ Failed</span>
+                    </div>
+                `;
+                processingList.appendChild(item);
+            }
+        }
+        
+        // Parameter comparison
+        function setupParameterSelect() {
+            const parameterSelect = document.getElementById('parameter-select');
+            const comparisonTableContainer = document.getElementById('comparison-table-container');
+            const chartToggleContainer = document.getElementById('chart-toggle-container');
+            const showChartCheckbox = document.getElementById('show-chart');
+            const chartContainer = document.getElementById('chart-container');
+            
+            // Populate parameter select
+            updateParameterSelect();
+            
+            // Handle parameter selection
+            parameterSelect.addEventListener('change', function() {
+                const selectedParameter = this.value;
+                
+                if (selectedParameter) {
+                    // Get comparison data
+                    const comparisonData = getParameterComparison(selectedParameter);
+                    
+                    // Populate table
+                    populateComparisonTable(comparisonData);
+                    
+                    // Show table and chart toggle
+                    comparisonTableContainer.classList.remove('hidden');
+                    chartToggleContainer.classList.remove('hidden');
+                    
+                    // Reset chart visibility
+                    showChartCheckbox.checked = false;
+                    chartContainer.classList.add('hidden');
+                } else {
+                    // Hide table and chart
+                    comparisonTableContainer.classList.add('hidden');
+                    chartToggleContainer.classList.add('hidden');
+                    chartContainer.classList.add('hidden');
+                }
+            });
+            
+            // Handle chart toggle
+            showChartCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    chartContainer.classList.remove('hidden');
+                    const selectedParameter = parameterSelect.value;
+                    const comparisonData = getParameterComparison(selectedParameter);
+                    createComparisonChart(comparisonData, selectedParameter);
+                } else {
+                    chartContainer.classList.add('hidden');
+                }
+            });
+        }
+        
+        function updateParameterSelect() {
+            const parameterSelect = document.getElementById('parameter-select');
+            const uniqueParameters = getUniqueParameters();
+            
+            // Clear existing options except the first one
+            while (parameterSelect.options.length > 1) {
+                parameterSelect.remove(1);
+            }
+            
+            // Add parameter options
+            uniqueParameters.forEach(param => {
+                const option = document.createElement('option');
+                option.value = param;
+                option.textContent = formatParameterName(param);
+                parameterSelect.appendChild(option);
+            });
+        }
+        
+        function populateComparisonTable(data) {
+            const tableBody = document.querySelector('#comparison-table tbody');
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="4">No data available</td>';
+                tableBody.appendChild(row);
+                return;
+            }
+            
+            data.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.supplier}</td>
+                    <td>${item.part_number}</td>
+                    <td>${item.parameter_value}</td>
+                    <td>${item.unit}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function createComparisonChart(data, parameterName) {
+            const ctx = document.getElementById('comparison-chart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (comparisonChart) {
+                comparisonChart.destroy();
+            }
+            
+            // Prepare data for chart
+            const labels = data.map(item => item.part_number);
+            const values = data.map(item => {
+                // Try to convert to number if possible
+                const val = parseFloat(item.parameter_value);
+                return isNaN(val) ? 0 : val;
+            });
+            const colors = data.map((item, index) => {
+                const colors = [
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)',
+                    'rgba(255, 99, 132, 0.7)'
+                ];
+                return colors[index % colors.length];
+            });
+            
+            // Create chart
+            comparisonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: formatParameterName(parameterName),
+                        data: values,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: getParameterUnit(parameterName)
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Part Number'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `${formatParameterName(parameterName)} Comparison`,
+                            font: {
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const item = data[context.dataIndex];
+                                    return `${item.supplier}: ${item.parameter_value} ${item.unit}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Query handling
+        function setupQueryForm() {
+            const queryBtn = document.getElementById('query-btn');
+            const queryInput = document.getElementById('query-input');
+            const thinking = document.getElementById('thinking');
+            const queryResponse = document.getElementById('query-response');
+            
+            queryBtn.addEventListener('click', function() {
+                const query = queryInput.value.trim();
+                
+                if (query) {
+                    // Show thinking indicator
+                    thinking.classList.remove('hidden');
+                    queryResponse.classList.add('hidden');
+                    
+                    // Simulate AI processing
+                    setTimeout(() => {
+                        const response = simulateAIQuery(query);
+                        
+                        // Hide thinking indicator
+                        thinking.classList.add('hidden');
+                        
+                        // Show response
+                        queryResponse.textContent = response;
+                        queryResponse.classList.remove('hidden');
+                    }, 2000);
+                }
+            });
+        }
+        
+        // API key handling
+        function setupApiKeyInput() {
+            const apiKeyInput = document.getElementById('api-key');
+            const apiStatus = document.getElementById('api-status');
+            
+            apiKeyInput.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    apiStatus.innerHTML = '✅ API Key configured';
+                    apiStatus.className = 'success-message';
+                } else {
+                    apiStatus.innerHTML = '⚠️ Enter your Mistral API key';
+                    apiStatus.className = 'warning-message';
+                }
+            });
+        }
+        
+        // Demo data generation
+        function loadDemoData() {
+            // Generate demo datasheets
+            suppliers.forEach(supplier => {
+                const productFamily = productFamilies[Math.floor(Math.random() * productFamilies.length)];
+                const fileName = `${supplier}_Datasheet_${Math.floor(1000 + Math.random() * 9000)}.pdf`;
+                
+                const data = {
+                    supplier: supplier,
+                    product_family: productFamily,
+                    file_name: fileName
+                };
+                
+                saveDatasheet(data);
+            });
+        }
+        
+        function simulateExtraction(fileName) {
+            // Extract supplier from filename if possible
+            let supplier = fileName.split('_')[0];
+            if (!suppliers.includes(supplier)) {
+                supplier = suppliers[Math.floor(Math.random() * suppliers.length)];
+            }
+            
+            const productFamily = productFamilies[Math.floor(Math.random() * productFamilies.length)];
+            
+            // Generate 1-3 variants
+            const variants = [];
+            const variantCount = Math.floor(1 + Math.random() * 3);
+            
+            for (let i = 0; i < variantCount; i++) {
+                const partNumber = `${supplier.substring(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+                
+                // Generate parameters
+                const parameters = parameterDefinitions.map(param => {
+                    let value;
+                    
+                    if (param.name === 'temperature_range') {
+                        const low = Math.floor(-40 + Math.random() * 40);
+                        const high = Math.floor(70 + Math.random() * 15);
+                        value = `${low} to ${high}`;
+                    } else if (param.name === 'data_rate') {
+                        value = (1 + Math.random() * 99).toFixed(1);
+                    } else if (param.name === 'wavelength') {
+                        value = [850, 1310, 1550][Math.floor(Math.random() * 3)];
+                    } else if (param.name === 'power_consumption') {
+                        value = (0.5 + Math.random() * 4.5).toFixed(2);
+                    } else if (param.name === 'reach') {
+                        value = [100, 300, 500, 1000, 10000][Math.floor(Math.random() * 5)];
+                    } else {
+                        value = 'Unknown';
+                    }
+                    
+                    return {
+                        name: param.name,
+                        value: value,
+                        unit: param.unit
+                    };
+                });
+                
+                variants.push({
+                    part_number: partNumber,
+                    parameters: parameters
+                });
+            }
+            
+            return {
+                supplier: supplier,
+                product_family: productFamily,
+                file_name: fileName,
+                variants: variants
+            };
+        }
+        
+        // Database simulation functions
+        function saveDatasheet(data) {
+            const id = demoData.nextId++;
+            const uploadDate = new Date();
+            
+            // Create datasheet entry
+            const datasheet = {
+                id: id,
+                supplier: data.supplier,
+                product_family: data.product_family,
+                upload_date: uploadDate,
+                file_name: data.file_name,
+                extracted_data: data
+            };
+            
+            demoData.datasheets.push(datasheet);
+            
+            // Create parameter entries
+            if (data.variants) {
+                data.variants.forEach(variant => {
+                    const partNumber = variant.part_number;
+                    
+                    if (variant.parameters) {
+                        variant.parameters.forEach(param => {
+                            const parameter = {
+                                id: demoData.nextId++,
+                                datasheet_id: id,
+                                part_number: partNumber,
+                                parameter_name: param.name,
+                                parameter_value: param.value,
+                                unit: param.unit,
+                                category: getParameterCategory(param.name)
+                            };
+                            
+                            demoData.parameters.push(parameter);
+                        });
+                    }
+                });
+            }
+        }
+        
+        function getUniqueParameters() {
+            const parameters = new Set();
+            
+            demoData.parameters.forEach(param => {
+                parameters.add(param.parameter_name);
+            });
+            
+            return Array.from(parameters);
+        }
+        
+        function getParameterComparison(parameterName) {
+            return demoData.parameters
+                .filter(param => param.parameter_name === parameterName)
+                .map(param => {
+                    const datasheet = demoData.datasheets.find(ds => ds.id === param.datasheet_id);
+                    
+                    return {
+                        supplier: datasheet ? datasheet.supplier : 'Unknown',
+                        part_number: param.part_number,
+                        parameter_value: param.parameter_value,
+                        unit: param.unit
+                    };
+                });
+        }
+        
+        function simulateAIQuery(query) {
+            // Simple response templates
+            const responses = {
+                "highest data rate": "Based on the available datasheets, the product with the highest data rate is {part} from {supplier} with {value} {unit}.",
+                "lowest power": "The most power-efficient product is {part} from {supplier}, consuming only {value} {unit}.",
+                "temperature": "The product with the widest temperature range is {part} from {supplier} with {value} {unit}.",
+                "compare": "When comparing these products, {part1} from {supplier1} offers {value1} {unit}, while {part2} from {supplier2} provides {value2} {unit}.",
+                "default": "Based on my analysis of the datasheets, {part} from {supplier} has {parameter} of {value} {unit}, which is relevant to your query."
+            };
+            
+            // Find a parameter that might match the query
+            let paramName = null;
+            if (query.toLowerCase().includes("data rate")) {
+                paramName = "data_rate";
+            } else if (query.toLowerCase().includes("power")) {
+                paramName = "power_consumption";
+            } else if (query.toLowerCase().includes("temperature")) {
+                paramName = "temperature_range";
+            } else if (query.toLowerCase().includes("wavelength")) {
+                paramName = "wavelength";
+            } else if (query.toLowerCase().includes("reach") || query.toLowerCase().includes("distance")) {
+                paramName = "reach";
+            }
+            
+            // Get relevant data
+            if (paramName) {
+                const comparisonData = getParameterComparison(paramName);
+                
+                if (comparisonData.length > 0) {
+                    // Sort data if needed
+                    if (query.toLowerCase().includes("highest") && ["data_rate", "reach"].includes(paramName)) {
+                        comparisonData.sort((a, b) => parseFloat(b.parameter_value) - parseFloat(a.parameter_value));
+                        
+                        return responses["highest data rate"]
+                            .replace("{part}", comparisonData[0].part_number)
+                            .replace("{supplier}", comparisonData[0].supplier)
+                            .replace("{value}", comparisonData[0].parameter_value)
+                            .replace("{unit}", comparisonData[0].unit);
+                    } else if (query.toLowerCase().includes("lowest") && paramName === "power_consumption") {
+                        comparisonData.sort((a, b) => parseFloat(a.parameter_value) - parseFloat(b.parameter_value));
+                        
+                        return responses["lowest power"]
+                            .replace("{part}", comparisonData[0].part_number)
+                            .replace("{supplier}", comparisonData[0].supplier)
+                            .replace("{value}", comparisonData[0].parameter_value)
+                            .replace("{unit}", comparisonData[0].unit);
+                    } else if (query.toLowerCase().includes("compare") && comparisonData.length >= 2) {
+                        return responses["compare"]
+                            .replace("{part1}", comparisonData[0].part_number)
+                            .replace("{supplier1}", comparisonData[0].supplier)
+                            .replace("{value1}", comparisonData[0].parameter_value)
+                            .replace("{unit}", comparisonData[0].unit)
+                            .replace("{part2}", comparisonData[1].part_number)
+                            .replace("{supplier2}", comparisonData[1].supplier)
+                            .replace("{value2}", comparisonData[1].parameter_value);
+                    } else {
+                        // Default response with first item
+                        return responses["default"]
+                            .replace("{part}", comparisonData[0].part_number)
+                            .replace("{supplier}", comparisonData[0].supplier)
+                            .replace("{parameter}", formatParameterName(paramName))
+                            .replace("{value}", comparisonData[0].parameter_value)
+                            .replace("{unit}", comparisonData[0].unit);
+                    }
+                }
+            }
+            
+            // Generic response if no specific match
+            return "I've analyzed the datasheets in the system, but I don't have enough specific information to answer your question precisely. Try asking about data rates, power consumption, temperature ranges, wavelengths, or reach distances of specific products.";
+        }
+        
+        // Helper functions
+        function formatParameterName(name) {
+            // Convert snake_case to Title Case
+            return name
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+        
+        function getParameterCategory(name) {
+            const param = parameterDefinitions.find(p => p.name === name);
+            return param ? param.category : 'general';
+        }
+        
+        function getParameterUnit(name) {
+            const param = parameterDefinitions.find(p => p.name === name);
+            return param ? param.unit : '';
+        }
+        
+        function updateMetrics() {
+            document.getElementById('datasheet-count').textContent = demoData.datasheets.length;
+            document.getElementById('parameter-count').textContent = getUniqueParameters().length;
+        }
+    </script>
+</body>
+</html>
