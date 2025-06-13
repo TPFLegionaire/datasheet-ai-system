@@ -18,6 +18,9 @@ import asyncio
 from mistralai import Mistral
 import base64
 from io import BytesIO
+# New extraction & DB modules
+from pdf_extractor import PDFExtractor
+from database import DatabaseManager, DatabaseError
 
 # Page configuration
 st.set_page_config(
@@ -137,54 +140,13 @@ class MistralProcessor:
         except:
             return "Please ensure your API key is configured correctly."
 
-# Database Functions
-def save_datasheet(supplier: str, product_family: str, filename: str, data: Dict):
-    """Save datasheet to database"""
-    conn = sqlite3.connect('datasheet_system.db')
-    c = conn.cursor()
-    
-    c.execute('''
-        INSERT INTO datasheets (supplier, product_family, upload_date, file_name, extracted_data)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (supplier, product_family, datetime.now(), filename, json.dumps(data)))
-    
-    datasheet_id = c.lastrowid
-    
-    for variant in data.get('variants', []):
-        part_number = variant.get('part_number', 'Unknown')
-        for param in variant.get('parameters', []):
-            c.execute('''
-                INSERT INTO parameters 
-                (datasheet_id, part_number, parameter_name, parameter_value, unit, category)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                datasheet_id, part_number,
-                param.get('name', ''), str(param.get('value', '')),
-                param.get('unit', ''), 'general'
-            ))
-    
-    conn.commit()
-    conn.close()
+# --------------------------------------------------------------------------- #
+# Switch to new helper classes for PDF extraction & DB                        #
+# --------------------------------------------------------------------------- #
 
-def get_all_datasheets():
-    """Get all datasheets"""
-    conn = sqlite3.connect('datasheet_system.db')
-    df = pd.read_sql_query("SELECT * FROM datasheets ORDER BY upload_date DESC", conn)
-    conn.close()
-    return df
-
-def get_parameters_comparison(parameter_name: str):
-    """Get parameter comparison"""
-    conn = sqlite3.connect('datasheet_system.db')
-    query = """
-        SELECT d.supplier, p.part_number, p.parameter_value, p.unit
-        FROM parameters p
-        JOIN datasheets d ON p.datasheet_id = d.id
-        WHERE LOWER(p.parameter_name) LIKE LOWER(?)
-    """
-    df = pd.read_sql_query(query, conn, params=[f'%{parameter_name}%'])
-    conn.close()
-    return df
+# Singletons
+db_manager = DatabaseManager()
+extractor = PDFExtractor()
 
 # Main UI
 def main():
@@ -205,11 +167,9 @@ def main():
             processor = None
     
     # Metrics
-    conn = sqlite3.connect('datasheet_system.db')
-    c = conn.cursor()
-    datasheet_count = c.execute("SELECT COUNT(*) FROM datasheets").fetchone()[0]
-    param_count = c.execute("SELECT COUNT(DISTINCT parameter_name) FROM parameters").fetchone()[0]
-    conn.close()
+    metrics = db_manager.get_metrics()
+    datasheet_count = metrics["datasheets"]
+    param_count = metrics["parameters"]
     
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("📄 Datasheets", datasheet_count)
@@ -227,28 +187,36 @@ def main():
         if uploaded_files and processor:
             for file in uploaded_files:
                 with st.spinner(f"Processing {file.name}..."):
-                    loop = asyncio.new_event_loop()
-                    data = loop.run_until_complete(
-                        processor.extract_from_pdf(file.read(), file.name)
-                    )
-                    if data:
-                        save_datasheet(
-                            data['supplier'], data['product_family'],
-                            file.name, data
+                    try:
+                        # Real extraction using pdf_extractor
+                        result = extractor.extract_from_bytes(file.read(), file.name)
+                        db_manager.save_datasheet(
+                            supplier=result.supplier,
+                            product_family=result.product_family,
+                            filename=file.name,
+                            data=result.to_dict()
                         )
-                        st.success(f"✅ Processed {file.name}")
+                        st.success(f"✅ Extracted & stored {file.name}")
+                    except Exception as e:
+                        st.error(f"Extraction failed for {file.name}: {str(e)}")
+                        # Record failed status
+                        db_manager.save_datasheet(
+                            supplier="Unknown",
+                            product_family="Unknown",
+                            filename=file.name,
+                            data={},
+                            status="failed",
+                            error_message=str(e)
+                        )
     
     with tab2:
         st.header("Compare Parameters")
-        params = pd.read_sql_query(
-            "SELECT DISTINCT parameter_name FROM parameters", 
-            sqlite3.connect('datasheet_system.db')
-        )
+        params_df = db_manager.get_unique_parameters()
         
-        if not params.empty:
-            selected = st.selectbox("Select Parameter", params['parameter_name'])
+        if not params_df.empty:
+            selected = st.selectbox("Select Parameter", params_df['parameter_name'])
             if selected:
-                df = get_parameters_comparison(selected)
+                df = db_manager.get_parameters_comparison(selected)
                 st.dataframe(df)
                 
                 if st.checkbox("Show Chart"):
@@ -263,7 +231,7 @@ def main():
         if st.button("Get Answer") and query and processor:
             with st.spinner("Thinking..."):
                 # Get context
-                datasheets = get_all_datasheets()
+                datasheets = db_manager.get_all_datasheets()
                 context = "Available data: " + str(datasheets.to_dict())
                 answer = processor.answer_query(query, context)
                 st.success(answer)

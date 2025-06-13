@@ -2,3 +2,5 @@ streamlit
 pandas
 plotly
 openpyxl
+PyMuPDF        # provides the `fitz` module for fast PDF parsing
+pdfplumber     # optional helper for extracting text/tables from PDFs
