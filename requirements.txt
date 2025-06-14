@@ -1,6 +1,29 @@
+# Core Application & UI
 streamlit
 pandas
 plotly
-openpyxl
-PyMuPDF        # provides the `fitz` module for fast PDF parsing
-pdfplumber     # optional helper for extracting text/tables from PDFs
+openpyxl # For Pandas Excel read/write functionality
+nest-asyncio # For running asyncio code within Streamlit
+
+# PDF Processing
+PyMuPDF        # Provides the `fitz` module for fast PDF parsing
+pdfplumber     # For PDF text/table extraction, used as primary or fallback
+
+# AI & API Interaction
+mistralai      # Official Mistral AI Python client
+requests       # For making HTTP requests (e.g., OAuth in auth.py)
+backoff        # For exponential backoff and retries on API calls
+
+# --- Development & Testing Dependencies ---
+# These are typically installed in a development environment.
+# You can install them using: pip install -r requirements.txt
+# Or, for a production deployment, you might want to exclude these.
+# To install only runtime dependencies, you might need to manually create a separate file
+# or use a tool like pip-tools to manage different sets of dependencies.
+
+# pytest           # For running automated tests
+# pytest-cov       # For measuring test coverage
+# flake8           # For linting and code style checks
+# bandit           # For security scanning
+# tabulate         # Used in some test/utility scripts for pretty-printing tables
+# matplotlib       # Used in some test/utility scripts for generating visualizations

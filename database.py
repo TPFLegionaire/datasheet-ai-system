@@ -593,6 +593,60 @@ class DatabaseManager:
             logger.error(f"Error retrieving metrics: {str(e)}")
             raise DatabaseError(f"Failed to retrieve metrics: {str(e)}")
     
+    # ------------------------------------------------------------------ #
+    #                         Phase-2 helpers                            #
+    # ------------------------------------------------------------------ #
+    def get_extraction_stats(self) -> pd.DataFrame:
+        """
+        Return statistics about extraction methods (pattern vs AI).
+
+        Returns:
+            DataFrame with columns: extraction_method, count, avg_confidence
+        """
+        try:
+            with self.get_connection() as conn:
+                query = """
+                    SELECT extraction_method,
+                           COUNT(*) AS count,
+                           AVG(confidence) AS avg_confidence
+                    FROM parameters
+                    GROUP BY extraction_method
+                """
+                return pd.read_sql_query(query, conn)
+        except Exception as e:
+            logger.error(f"Error retrieving extraction stats: {str(e)}")
+            raise DatabaseError(f"Failed to retrieve extraction stats: {str(e)}")
+
+    def compare_extraction_methods(self, parameter_name: str) -> pd.DataFrame:
+        """
+        Compare values/confidence of a parameter extracted by different methods.
+
+        Args:
+            parameter_name: Parameter to compare
+        Returns:
+            DataFrame grouped by extraction_method with basic stats.
+        """
+        try:
+            with self.get_connection() as conn:
+                base_query = """
+                    SELECT extraction_method,
+                           parameter_value,
+                           confidence
+                    FROM parameters
+                    WHERE LOWER(parameter_name) = LOWER(?)
+                """
+                df = pd.read_sql_query(base_query, conn, params=[parameter_name])
+                # Attempt numeric conversion for stats
+                df['numeric_value'] = pd.to_numeric(df['parameter_value'], errors='coerce')
+                stats = df.groupby('extraction_method').agg(
+                    samples=('parameter_value', 'count'),
+                    avg_confidence=('confidence', 'mean'),
+                    avg_value=('numeric_value', 'mean')
+                ).reset_index()
+                return stats
+        except Exception as e:
+            logger.error(f"Error comparing extraction methods: {str(e)}")
+            raise DatabaseError(f"Failed to compare extraction methods: {str(e)}")
     def search_parts(self, search_term: str) -> pd.DataFrame:
         """
         Search for parts by part number or supplier

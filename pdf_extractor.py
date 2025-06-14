@@ -33,6 +33,7 @@ class Parameter:
     unit: str = ""
     category: str = "general"
     confidence: float = 1.0  # Confidence score for extraction accuracy
+    extraction_method: str = "pattern"  # "pattern" or "ai"
 
 @dataclass
 class PartVariant:
@@ -66,6 +67,8 @@ class DatasheetExtraction:
                             "unit": param.unit,
                             "category": param.category,
                             "confidence": param.confidence
+                            ,
+                            "extraction_method": param.extraction_method
                         }
                         for param in variant.parameters
                     ]
@@ -171,6 +174,8 @@ class PDFExtractor:
         self.debug = debug
         if debug:
             logger.setLevel(logging.DEBUG)
+        # Optional AI processor (i.e. MistralProcessor) can be injected later
+        self.ai_processor = None
     
     def extract_from_file(self, file_path: str) -> DatasheetExtraction:
         """
